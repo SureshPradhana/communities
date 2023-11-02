@@ -266,9 +266,10 @@ app.get('/v1/auth/me', verifyToken, async (req, res) => {
 });
 
 
-app.post('/v1/community', async (req, res) => {
+app.post('/v1/community', verifyToken,async (req, res) => {
   try {
     const { name } = req.body;
+    
 
     // Check if the required 'name' field is provided
     if (!name || name.length < 2) {
@@ -282,7 +283,7 @@ app.post('/v1/community', async (req, res) => {
     const community = {
       name,
       slug,
-      owner: new ObjectID(req.user.id), // The user who creates the community is the owner
+      owner: new ObjectId(req.user.id), // The user who creates the community is the owner
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -296,8 +297,8 @@ app.post('/v1/community', async (req, res) => {
     // Create a member entry for the community with the owner's user ID and role
     const member = {
       community: communityId,
-      user: new ObjectID(req.user.id),
-      role: userRole, // Role for the owner (e.g., 'Community Admin')
+      user: new ObjectId(req.user.id),
+      role: 'Community Admin', // Role for the owner (e.g., 'Community Admin')
       created_at: new Date(),
     };
 
