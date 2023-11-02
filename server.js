@@ -4,9 +4,10 @@ const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 
+
 // Import the MongoDB driver
-const { MongoClient } = require('mongodb');
-const { connectToMongo, rolesCollection, ObjectID, usersCollection, communitiesCollection, membersCollection } = require('./schemas/schema');
+const { MongoClient, ObjectID } = require('mongodb');
+const { connectToMongo, rolesCollection, usersCollection, communitiesCollection, membersCollection } = require('./schemas/schema');
 const app = express();
 const port = 3000;
 
@@ -30,7 +31,8 @@ app.use(async (req, res, next) => {
 
 
 // Secret key for JWT
-const jwtSecret = 'your-secret-key';
+const secretKey = 'my-secret-key';
+
 
 
 // Middleware to verify the Bearer Token
@@ -167,7 +169,7 @@ app.post('/v1/auth/signup', async (req, res) => {
       // Retrieve the inserted user data by its ID
       const insertedUser = await usersCollection.findOne({ _id: result.insertedId });
       // Generate an access token
-      const accessToken = jwt.sign({ id: insertedUser._id }, jwtSecret);
+      const accessToken = jwt.sign({ id: insertedUser._id }, secretKey);
       
       res.status(200).json({
         status: true,
@@ -209,7 +211,7 @@ app.post('/v1/auth/signin', async (req, res) => {
     }
 
     // Generate and sign a JWT token
-    const token = jwt.sign({ id: user._id }, jwtSecret);
+    const token = jwt.sign({ id: user._id }, secretKey);
 
     // Respond with a success message and the access token
     res.json({
@@ -238,6 +240,7 @@ app.post('/v1/auth/signin', async (req, res) => {
 app.get('/v1/auth/me', verifyToken, async (req, res) => {
   try {
     // Get the currently signed-in user's details from MongoDB
+    console.log(req.user)
     const user = await usersCollection.findOne({ _id: new ObjectID(req.user.id) });
 
     if (!user) {
