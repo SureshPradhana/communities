@@ -53,6 +53,12 @@ const verifyToken = (req, res, next) => {
 app.use(express.json());
 
 
+app.get('/', (req, res) => {
+    // Serve the index.html file
+    res.sendFile(__dirname + '/index.html');
+});
+
+
 app.post('/v1/role', async (req, res) => {
   try {
     const { name } = req.body;
@@ -157,28 +163,22 @@ app.post('/v1/auth/signup', async (req, res) => {
     };
 
     const result = await usersCollection.insertOne(newUser);
-
-    const user = result.ops[0];
-
-    // Generate an access token
-    const accessToken = jwt.sign({ id: user._id }, jwtSecret);
-
-    const responseData = {
-      status: true,
-      content: {
-        data: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          created_at: user.created_at,
+    if (result.acknowledged && result.insertedId) {
+      // Retrieve the inserted user data by its ID
+      const insertedUser = await usersCollection.findOne({ _id: result.insertedId });
+      // Generate an access token
+      const accessToken = jwt.sign({ id: user._id }, jwtSecret);
+      
+      res.status(200).json({
+        status: true,
+        content: {
+          data: insertedUser,
+          meta: {
+            access_token: accessToken,
+          },
         },
-        meta: {
-          access_token: accessToken,
-        },
-      },
-    };
-
-    res.status(200).json(responseData);
+      })
+    }
   } catch (err) {
     console.error('Error creating a new user:', err);
     res.status(500).json({ message: 'Failed to create a new user' });
