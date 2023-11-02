@@ -293,8 +293,8 @@ app.post('/v1/community', verifyToken, async (req, res) => {
 
     // Generate an ID for the newly created community
     const communityId = result.insertedId;
-    
-    let ownerRole=await rolesCollection.findOne({ name: 'Community Admin' });
+
+    let ownerRole = await rolesCollection.findOne({ name: 'Community Admin' });
     if (!ownerRole) {
       return res.status(500).json({ message: 'Owner role not found' });
     }
@@ -314,7 +314,7 @@ app.post('/v1/community', verifyToken, async (req, res) => {
       status: true,
       content: {
         data: {
-          id:communityId.toString(),
+          id: communityId.toString(),
           name: community.name,
           slug: community.slug,
           owner: community.owner,
@@ -552,14 +552,14 @@ app.post('/v1/member', verifyToken, async (req, res) => {
       return res.status(400).json({ message: 'Invalid community, user, or role' });
     }
 
-  
+
     // Check if the user has the required role (Community Admin) in the specified community
-      if (!communityDocument.owner.equals(new ObjectId(userId))) {
-        return res.status(403).json({ message: 'Not allowed to add members' });
-      }
+    if (!communityDocument.owner.equals(new ObjectId(userId))) {
+      return res.status(403).json({ message: 'Not allowed to add members' });
+    }
 
     // Generate a unique member ID (you should use a database-generated ID in production)
-     const memberId = new ObjectId();  // Replace with a unique ID generation method
+    const memberId = new ObjectId();  // Replace with a unique ID generation method
 
     // Create a new member document
     const memberDocument = {
@@ -597,8 +597,13 @@ app.delete('/v1/member/:id', verifyToken, async (req, res) => {
     const memberId = req.params.id;
     const userId = req.user.id;
 
+    // Check if memberId is a valid ObjectId
+    if (!ObjectId.isValid(memberId)) {
+      return res.status(400).json({ message: 'Invalid member ID' });
+    }
+
     // Check if the member exists in the "members" collection in the database
-    const memberDocument = await membersCollection.findOne({ _id: new ObjectId(memberId) });
+    const memberDocument = await membersCollection.findOne({ user: new ObjectId(memberId) });
 
     if (!memberDocument) {
       return res.status(404).json({ message: 'Member not found' });
@@ -606,42 +611,35 @@ app.delete('/v1/member/:id', verifyToken, async (req, res) => {
 
     // Find the community associated with the member
     const communityId = memberDocument.community;
-
-    // Check if the user has the required role (Community Admin or Community Moderator) in the community
+    const communityDocument = await communitiesCollection.findOne({ _id: new ObjectId(communityId) });
     const userRole = await membersCollection.findOne({
       community: communityId,
       user: new ObjectId(userId),
     });
+    // Get the role document using UserRole.role
+    const roleDocument = await rolesCollection.findOne({ _id: new ObjectId(userRole.role) });
 
-    if (!userRole || (userRole.role.toString() !== 'Community Admin' && userRole.role.toString() !== 'Community Moderator')) {
-      return res.status(403).json({ message: 'Not allowed to remove members' });
+    // Check if the user has the required role (Community Admin or Community Moderator) in the community
+    if (roleDocument) {
+      const roleName = roleDocument.name;
+
+      // Check if the role name is "Community Admin" or "Community Moderator"
+      if (roleName === 'Community Admin' || roleName === 'Community Moderator') {
+        // User has the required role, proceed to remove the member
+        await membersCollection.deleteOne({ user: new ObjectId(memberId) });
+        return res.json({ status: true });
+      }
     }
 
-    // Remove the member from the "members" collection in the database
-    await membersCollection.deleteOne({ _id: new ObjectId(memberId) });
-
-    res.json({ status: true });
+    return res.status(403).json({ message: 'Not allowed to remove members' });
   } catch (err) {
     console.error('Error removing a member:', err);
     res.status(500).json({ message: 'Failed to remove the member' });
   }
 });
 
+
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-// const listener = app.listen(process.env.PORT || 3000, function() {
-//   console.log('Your app is listening on port ' + listener.address().port);
-//   if (process.env.NODE_ENV === 'test') {
-//     console.log('Running Tests...');
-//     setTimeout(function() {
-//       try {
-//         runner.run();
-//       } catch (e) {
-//         console.log('Tests are not valid:');
-//         console.error(e);
-//       }
-//     }, 1500);
-//   }
-// });
