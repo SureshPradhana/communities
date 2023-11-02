@@ -1,4 +1,4 @@
-entrypoint = "index.js"
+entrypoint = "server.js"
 modules = ["nodejs-18:v3-20230608-f4cd419"]
 hidden = [".config", "package-lock.json"]
 
@@ -6,6 +6,6 @@ hidden = [".config", "package-lock.json"]
 channel = "stable-23_05"
 
 [deployment]
-run = ["node", "index.js"]
+run = ["node", "server.js"]
 deploymentTarget = "cloudrun"
 ignorePorts = false
