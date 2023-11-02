@@ -56,8 +56,8 @@ app.use(express.json());
 
 
 app.get('/', (req, res) => {
-    // Serve the index.html file
-    res.sendFile(__dirname + '/index.html');
+  // Serve the index.html file
+  res.sendFile(__dirname + '/index.html');
 });
 
 
@@ -167,12 +167,12 @@ app.post('/v1/auth/signup', async (req, res) => {
     const result = await usersCollection.insertOne(newUser);
     if (result.acknowledged && result.insertedId) {
       // Retrieve the inserted user data by its ID
-      
+
       const insertedUser = await usersCollection.findOne({ _id: result.insertedId });
       // Generate an access token
       console.log(result.insertedId)
       const accessToken = jwt.sign({ id: insertedUser._id }, secretKey);
-      
+
       res.status(200).json({
         status: true,
         content: {
@@ -244,7 +244,7 @@ app.get('/v1/auth/me', verifyToken, async (req, res) => {
     // Get the currently signed-in user's details from MongoDB
     console.log(req.user)
     console.log(new ObjectId(req.user.id))
-    const user = await usersCollection.findOne({ _id:new ObjectId(req.user.id)});
+    const user = await usersCollection.findOne({ _id: new ObjectId(req.user.id) });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -266,10 +266,10 @@ app.get('/v1/auth/me', verifyToken, async (req, res) => {
 });
 
 
-app.post('/v1/community', verifyToken,async (req, res) => {
+app.post('/v1/community', verifyToken, async (req, res) => {
   try {
     const { name } = req.body;
-    
+
 
     // Check if the required 'name' field is provided
     if (!name || name.length < 2) {
@@ -293,12 +293,16 @@ app.post('/v1/community', verifyToken,async (req, res) => {
 
     // Generate an ID for the newly created community
     const communityId = result.insertedId;
-
+    
+    let ownerRole=await rolesCollection.findOne({ name: 'Community Admin' });
+    if (!ownerRole) {
+      return res.status(500).json({ message: 'Owner role not found' });
+    }
     // Create a member entry for the community with the owner's user ID and role
     const member = {
       community: communityId,
       user: new ObjectId(req.user.id),
-      role: 'Community Admin', // Role for the owner (e.g., 'Community Admin')
+      role: ownerRole._id, // Role for the owner (e.g., 'Community Admin')
       created_at: new Date(),
     };
 
@@ -309,7 +313,14 @@ app.post('/v1/community', verifyToken,async (req, res) => {
     res.status(200).json({
       status: true,
       content: {
-        data: community,
+        data: {
+          id:communityId.toString(),
+          name: community.name,
+          slug: community.slug,
+          owner: community.owner,
+          created_at: community.created_at.toISOString(),
+          updated_at: community.updated_at.toISOString(),
+        },
       },
     });
   } catch (err) {
@@ -380,9 +391,9 @@ app.get('/v1/community/:id/members', async (req, res) => {
     const page = req.query.page ? parseInt(req.query.page, 10) : 1;
 
     // Query the MongoDB "members" collection to find members for the specified community
-    const membersCursor = membersCollection.find({ community: new ObjectID(communityId) });
+    const membersCursor = membersCollection.find({ community: new ObjectId(communityId) });
 
-    const totalMembers = await membersCursor.count();
+    const totalMembers = await membersCursor.countDocuments;
     const totalPages = Math.ceil(totalMembers / pageSize);
 
     // Use skip and limit to implement pagination
@@ -438,9 +449,9 @@ app.get('/v1/community/me/owner', verifyToken, async (req, res) => {
     const userId = req.user.id;
 
     // Query the MongoDB "communities" collection to find communities owned by the currently signed-in user
-    const ownedCommunitiesCursor = communitiesCollection.find({ owner: new ObjectID(userId) });
+    const ownedCommunitiesCursor = communitiesCollection.find({ owner: new ObjectId(userId) });
 
-    const totalCommunities = await ownedCommunitiesCursor.count();
+    const totalCommunities = await ownedCommunitiesCursor.countDocuments;
     const totalPages = Math.ceil(totalCommunities / pageSize);
 
     // Use skip and limit to implement pagination
@@ -475,11 +486,11 @@ app.get('/v1/community/me/member', verifyToken, async (req, res) => {
 
     // Query the MongoDB "members" collection to find communities joined by the currently signed-in user
     const memberCommunitiesCursor = membersCollection
-      .find({ user: new ObjectID(userId) })
+      .find({ user: new ObjectId(userId) })
       .limit(pageSize)
       .skip((page - 1) * pageSize);
 
-    const totalCommunities = await memberCommunitiesCursor.count();
+    const totalCommunities = await memberCommunitiesCursor.countDocuments;
     const totalPages = Math.ceil(totalCommunities / pageSize);
 
     // Fetch communities and expand owner details (id and name)
@@ -488,17 +499,21 @@ app.get('/v1/community/me/member', verifyToken, async (req, res) => {
 
     for (const communityMember of communitiesOnPage) {
       const community = await communitiesCollection.findOne({
-        _id: new ObjectID(communityMember.community),
+        _id: new ObjectId(communityMember.community),
       });
 
       if (community) {
+        const owner = await usersCollection.findOne({
+          _id: new ObjectId(community.owner),
+        });
+
         expandedCommunities.push({
           id: community._id.toString(),
           name: community.name,
           slug: community.slug,
           owner: {
             id: community.owner.toString(),
-            name: 'Dolores Abernathy', // Replace with actual owner name
+            name: owner ? owner.name : 'Unknown',  // Replace with actual owner name
           },
           created_at: community.created_at,
           updated_at: community.updated_at,
@@ -529,32 +544,29 @@ app.post('/v1/member', verifyToken, async (req, res) => {
     const userId = req.user.id;
 
     // Check if the community, user, and role exist in the database
-    const communityDocument = await communitiesCollection.findOne({ _id: new ObjectID(community) });
-    const userDocument = await usersCollection.findOne({ _id: new ObjectID(user) });
-    const roleDocument = await rolesCollection.findOne({ _id: new ObjectID(role) });
+    const communityDocument = await communitiesCollection.findOne({ _id: new ObjectId(community) });
+    const userDocument = await usersCollection.findOne({ _id: new ObjectId(user) });
+    const roleDocument = await rolesCollection.findOne({ _id: new ObjectId(role) });
 
     if (!communityDocument || !userDocument || !roleDocument) {
       return res.status(400).json({ message: 'Invalid community, user, or role' });
     }
 
+  
     // Check if the user has the required role (Community Admin) in the specified community
-    const userRole = await membersCollection.findOne({
-      community: new ObjectID(community),
-      user: new ObjectID(userId),
-    });
-
-    if (!userRole || userRole.role.toString() !== role) {
-      return res.status(403).json({ message: 'Not allowed to add members' });
-    }
+      if (!communityDocument.owner.equals(new ObjectId(userId))) {
+        return res.status(403).json({ message: 'Not allowed to add members' });
+      }
 
     // Generate a unique member ID (you should use a database-generated ID in production)
-    const memberId = String(Date.now()); // Replace with a unique ID generation method
+     const memberId = new ObjectId();  // Replace with a unique ID generation method
 
     // Create a new member document
     const memberDocument = {
-      community: new ObjectID(community),
-      user: new ObjectID(user),
-      role: new ObjectID(role),
+      _id: memberId, // Store the member ID
+      community: new ObjectId(community),
+      user: new ObjectId(user),
+      role: new ObjectId(role),
       created_at: new Date(),
     };
 
@@ -586,7 +598,7 @@ app.delete('/v1/member/:id', verifyToken, async (req, res) => {
     const userId = req.user.id;
 
     // Check if the member exists in the "members" collection in the database
-    const memberDocument = await membersCollection.findOne({ _id: new ObjectID(memberId) });
+    const memberDocument = await membersCollection.findOne({ _id: new ObjectId(memberId) });
 
     if (!memberDocument) {
       return res.status(404).json({ message: 'Member not found' });
@@ -598,7 +610,7 @@ app.delete('/v1/member/:id', verifyToken, async (req, res) => {
     // Check if the user has the required role (Community Admin or Community Moderator) in the community
     const userRole = await membersCollection.findOne({
       community: communityId,
-      user: new ObjectID(userId),
+      user: new ObjectId(userId),
     });
 
     if (!userRole || (userRole.role.toString() !== 'Community Admin' && userRole.role.toString() !== 'Community Moderator')) {
@@ -606,7 +618,7 @@ app.delete('/v1/member/:id', verifyToken, async (req, res) => {
     }
 
     // Remove the member from the "members" collection in the database
-    await membersCollection.deleteOne({ _id: new ObjectID(memberId) });
+    await membersCollection.deleteOne({ _id: new ObjectId(memberId) });
 
     res.json({ status: true });
   } catch (err) {
