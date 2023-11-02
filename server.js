@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 
 
 // Import the MongoDB driver
-const { MongoClient, ObjectID } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const { connectToMongo, rolesCollection, usersCollection, communitiesCollection, membersCollection } = require('./schemas/schema');
 const app = express();
 const port = 3000;
@@ -167,8 +167,10 @@ app.post('/v1/auth/signup', async (req, res) => {
     const result = await usersCollection.insertOne(newUser);
     if (result.acknowledged && result.insertedId) {
       // Retrieve the inserted user data by its ID
+      
       const insertedUser = await usersCollection.findOne({ _id: result.insertedId });
       // Generate an access token
+      console.log(result.insertedId)
       const accessToken = jwt.sign({ id: insertedUser._id }, secretKey);
       
       res.status(200).json({
@@ -241,7 +243,8 @@ app.get('/v1/auth/me', verifyToken, async (req, res) => {
   try {
     // Get the currently signed-in user's details from MongoDB
     console.log(req.user)
-    const user = await usersCollection.findOne({ _id: new ObjectID(req.user.id) });
+    console.log(new ObjectId(req.user.id))
+    const user = await usersCollection.findOne({ _id:new ObjectId(req.user.id)});
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
