@@ -167,17 +167,22 @@ app.post('/v1/auth/signup', async (req, res) => {
       // Retrieve the inserted user data by its ID
       const insertedUser = await usersCollection.findOne({ _id: result.insertedId });
       // Generate an access token
-      const accessToken = jwt.sign({ id: user._id }, jwtSecret);
+      const accessToken = jwt.sign({ id: insertedUser._id }, jwtSecret);
       
       res.status(200).json({
         status: true,
         content: {
-          data: insertedUser,
+          data: {
+            id: insertedUser._id,
+            name: insertedUser.name,
+            email: insertedUser.email,
+            created_at: insertedUser.created_at,
+          },
           meta: {
             access_token: accessToken,
           },
         },
-      })
+      });
     }
   } catch (err) {
     console.error('Error creating a new user:', err);
