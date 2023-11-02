@@ -33,7 +33,7 @@ app.use(async (req, res, next) => {
 const jwtSecret = 'your-secret-key';
 
 
-// Middleware to verify the Bearer Toke
+// Middleware to verify the Bearer Token
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization;
 
@@ -69,17 +69,26 @@ app.post('/v1/role', async (req, res) => {
 
     const result = await rolesCollection.insertOne(roleData);
 
-    res.status(200).json({
-      status: true,
-      content: {
-        data: result.ops[0],
-      },
-    });
+    if (result.acknowledged && result.insertedId) {
+      // Retrieve the inserted role data by its ID
+      const insertedRole = await rolesCollection.findOne({ _id: result.insertedId });
+
+      res.status(200).json({
+        status: true,
+        content: {
+          data: insertedRole,
+        },
+      });
+    } else {
+      console.error('Failed to insert role into the database.');
+      res.status(500).json({ message: 'Failed to create a new role' });
+    }
   } catch (err) {
     console.error('Error creating a new role:', err);
     res.status(500).json({ message: 'Failed to create a new role' });
   }
 });
+
 
 app.get('/v1/role', async (req, res) => {
   try {
