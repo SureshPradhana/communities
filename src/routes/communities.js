@@ -113,7 +113,7 @@ router.get('/', async (req, res) => {
         });
       }
     }
-    console.log(expandCommunities)
+   
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 

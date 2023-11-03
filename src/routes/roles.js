@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
       });
     } else {
       console.error('Failed to insert role into the database.');
-      res.status(500).json({ message: 'Failed to create a new role' });
+      res.status(500).json({ message: 'Failed to create a new role',err });
     }
   } catch (err) {
     console.error('Error creating a new role:', err);
