@@ -2,10 +2,8 @@ const { MongoClient } = require('mongodb');
 const { Snowflake } = require('@theinternetfolks/snowflake');
 require('dotenv').config();
 
-// Define the MongoDB connection URL
-const mongoURI = process.env.MONGODB_URL; // Replace with your actual database URL
 
-// Create a MongoDB client
+const mongoURI = process.env.MONGODB_URL; 
 const client = new MongoClient(mongoURI, {});
 
 // Connect to the database
@@ -21,7 +19,7 @@ async function connectToMongo() {
 
 
 
-// Define validation schemas for collections
+// validation schemas for collections
 const usersValidation = {
   $jsonSchema: {
     bsonType: 'object',
@@ -126,9 +124,9 @@ async function createIndexes() {
   await membersCollection.createIndex({ created_at: 1 });
   await membersCollection.createIndex({ role: 1 });
 }
-// Export the Snowflake instance and collections
 
-// Define MongoDB collections for each collection with validation rules
+
+// MongoDB collections for each collection with validation rules
 const usersCollection = client
   .db()
   .collection('users', { validator: usersValidation });

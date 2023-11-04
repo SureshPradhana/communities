@@ -4,10 +4,6 @@ const router = express.Router();
 const { membersCollection, rolesCollection, usersCollection,communitiesCollection, Snowflake } = require('../database/mongo');
 const { verifyToken } = require('../middleware/auth');
 
-//snowflake
-// const snowflake=require('@theinternetfolks/snowflake')
-
-
 // Route to create a new member
 router.post('/', verifyToken, async (req, res) => {
   try {
@@ -29,11 +25,11 @@ router.post('/', verifyToken, async (req, res) => {
     }
 
     // Generate a unique member ID (you should use a database-generated ID in production)
-    const memberId = Snowflake.generate();  // Replace with a unique ID generation method
+    const memberId = Snowflake.generate();  
 
     // Create a new member document
     const memberDocument = {
-      _id: memberId, // Store the member ID
+      _id: memberId, 
       community:community,
       user: user,
       role: role,
@@ -104,6 +100,5 @@ router.delete('/:id', verifyToken,async (req, res) => {
   }
 });
 
-// Add more member-related routes or features here
 
 module.exports = router;

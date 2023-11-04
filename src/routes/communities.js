@@ -196,7 +196,7 @@ router.get('/:id/members', async (req, res) => {
 router.get('/me/owner', verifyToken, async (req, res) => {
   try {
     // Pagination parameters
-    const pageSize = 10; // Number of communities per page
+    const pageSize = 10; 
     const page = req.query.page ? parseInt(req.query.page, 10) : 1;
     const userId = req.user.id;
 
@@ -206,7 +206,7 @@ router.get('/me/owner', verifyToken, async (req, res) => {
     const totalCommunities = await communitiesCollection.estimatedDocumentCount({owner: userId });
     const totalPages = Math.ceil(totalCommunities / pageSize);
 
-    // Use skip and limit to implement pagination
+    // skip and limit to implement pagination
     const communitiesOnPage = await ownedCommunitiesCursor
       .skip((page - 1) * pageSize)
       .limit(pageSize)
@@ -265,7 +265,7 @@ router.get('/me/member', verifyToken, async (req, res) => {
           slug: community.slug,
           owner: {
             id: community.owner.toString(),
-            name: owner ? owner.name : 'Unknown',  // Replace with actual owner name
+            name: owner ? owner.name : 'Unknown',  
           },
           created_at: community.created_at,
           updated_at: community.updated_at,
@@ -290,6 +290,6 @@ router.get('/me/member', verifyToken, async (req, res) => {
   }
 });
 
-// Add more community-related routes or features here
+
 
 module.exports = router;

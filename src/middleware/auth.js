@@ -1,8 +1,7 @@
 const jwt = require('jsonwebtoken');
-const { secretKey } = require('../../config/config'); // Replace with your actual secret key
+const { secretKey } = require('../../config/config'); 
 
 const verifyToken = (req, res, next) => {
-  // Get the token from the request headers
   const token = req.headers.authorization;
 
   if (!token) {

@@ -8,7 +8,7 @@ const rolesRoutes = require('./src/routes/roles');
 const membersRoutes = require('./src/routes/members');
 const communitiesRoutes = require('./src/routes/communities');
 const errorMiddleware = require('./src/middleware/error');
-// You need to define verifyToken
+
 
 // Connect to MongoDB
 connectToMongo();
