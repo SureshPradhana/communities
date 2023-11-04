@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "mocha",
+    "unit-test": "mocha tests/unit",
+    "integration-test": "mocha tests/integration"
   },
   "author": "",
   "license": "ISC",
@@ -18,5 +21,10 @@
     "mongodb": "^6.2.0",
     "nodemon": "^3.0.1"
   },
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "chai": "^4.3.10",
+    "mocha": "^10.2.0",
+    "supertest": "^6.3.3"
+  }
 }
