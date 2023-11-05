@@ -10,7 +10,7 @@ const client = new MongoClient(mongoURI, {});
 async function connectToMongo() {
   try {
     await client.connect();
-    console.log('Connected to MongoDB');
+    // console.log('Connected to MongoDB');
     await createIndexes();
   } catch (err) {
     console.error('Error connecting to MongoDB:', err);

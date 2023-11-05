@@ -4,7 +4,7 @@ const router = express.Router();
 const { verifyToken } = require('../middleware/auth'); 
 const { communitiesCollection, rolesCollection, membersCollection,usersCollection,Snowflake } = require('../database/mongo');
 const {communitySchema}=require('../middleware/validation');
-const {ObjectId}=require('mongodb')
+
 
 // Route to create a new community
 router.post('/', verifyToken, async (req, res) => {

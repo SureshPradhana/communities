@@ -1,8 +1,8 @@
 const request = require('supertest');
-const app = require('../../server'); // Adjust the path as per your project structure
+const app = require('../../server'); 
 const expect = require('chai').expect;
 const { connectToMongo, rolesCollection } = require('../../src/database/mongo');
-describe('a suite auth unit tests', function () {
+describe('a suite role integration tests', function () {
 
   this.timeout(10000);
 
@@ -21,8 +21,9 @@ describe('a suite auth unit tests', function () {
         .end(function(err, res) {
           if (err) throw err;
           expect(res.body.status).to.be.true;
+          done();
         });
-    done();
+    
     });
 
   it('2 should get roles', function (done) {
@@ -32,7 +33,7 @@ describe('a suite auth unit tests', function () {
         .end(function(err, res) {
           if (err) throw err;
           expect(res.body.status).to.be.true;
+          done();
         });
-    done();
   });
 });
