@@ -1,13 +1,13 @@
 // communities.js
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../middleware/auth'); 
+// const { verifyToken } = require('../middleware/auth'); 
 const { communitiesCollection, rolesCollection, membersCollection,usersCollection,Snowflake } = require('../database/mongo');
 const {communitySchema}=require('../middleware/validation');
 
 
 // Route to create a new community
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', async (req, res) => {
   const { error } = communitySchema.validate(req.body);
 
   if (error) {
@@ -29,7 +29,7 @@ router.post('/', verifyToken, async (req, res) => {
       _id: Snowflake.generate().toString(), // Convert to string
       name,
       slug,
-      owner: req.user.id, // The user who creates the community is the owner
+      owner: req.session.user, // The user who creates the community is the owner
       created_at: new Date().toISOString(), // Convert to string
       updated_at: new Date().toISOString(), // Convert to string
     };
@@ -51,7 +51,7 @@ router.post('/', verifyToken, async (req, res) => {
     const memberData = {
       _id: Snowflake.generate().toString(), // Convert to string
       community: communityId,
-      user: req.user.id,
+      user: req.session.user,
       role: ownerRole._id,
       created_at: new Date().toISOString(), // Convert to string
     };
@@ -193,12 +193,12 @@ router.get('/:id/members', async (req, res) => {
   }
 });
 
-router.get('/me/owner', verifyToken, async (req, res) => {
+router.get('/me/owner', async (req, res) => {
   try {
     // Pagination parameters
     const pageSize = 10; 
     const page = req.query.page ? parseInt(req.query.page, 10) : 1;
-    const userId = req.user.id;
+    const userId = req.session.user;
 
     // Query the MongoDB "communities" collection to find communities owned by the currently signed-in user
     const ownedCommunitiesCursor = await communitiesCollection.find({ owner: userId });
@@ -229,12 +229,12 @@ router.get('/me/owner', verifyToken, async (req, res) => {
   }
 });
 
-router.get('/me/member', verifyToken, async (req, res) => {
+router.get('/me/member', async (req, res) => {
   try {
     // Pagination parameters
     const pageSize = 10; // Number of communities per page
     const page = req.query.page ? parseInt(req.query.page, 10) : 1;
-    const userId = req.user.id;
+    const userId = req.session.user;
 
     // Query the MongoDB "members" collection to find communities joined by the currently signed-in user
     const memberCommunitiesCursor = membersCollection

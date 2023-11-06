@@ -1,15 +1,10 @@
 // auth.js
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { usersCollection, Snowflake } = require('../database/mongo');
 const { userSchema, signInSchema } = require('../middleware/validation');
-const { verifyToken } = require('../middleware/auth');
 
-
-// Secret key for JWT
-const secretKey = 'my-secret-key';
 
 // Route to sign up a new user
 router.post('/signup', async (req, res) => {
@@ -42,7 +37,7 @@ router.post('/signup', async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      created_at: new Date(),
+      created_at: new Date().toISOString(),
     };
 
     const result = await usersCollection.insertOne(newUser);
@@ -51,7 +46,7 @@ router.post('/signup', async (req, res) => {
       const insertedUser = await usersCollection.findOne({ _id: result.insertedId });
 
       // Generate an access token
-      const accessToken = jwt.sign({ id: insertedUser._id }, secretKey);
+      // const accessToken = jwt.sign({ id: insertedUser._id }, secretKey);
       const { _id, name, email,created_at} = insertedUser;
       res.status(200).json({
         status: true,
@@ -63,7 +58,7 @@ router.post('/signup', async (req, res) => {
             created_at,
           },
           meta: {
-            access_token: accessToken,
+            access_token: result.insertedId,
           },
         },
       });
@@ -86,7 +81,7 @@ router.post('/signin', async (req, res) => {
 
   try {
     // Find the user by email
-    const user = await usersCollection.findOne({ email });
+    const user = await usersCollection.findOne({ "email":email });
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
@@ -98,10 +93,15 @@ router.post('/signin', async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
-
-    // Generate and sign a JWT token
-    const token = jwt.sign({ id: user._id }, secretKey);
+    // req.session.isAuthenticated = true;
+    // // // Generate and sign a JWT token
+    // const token = jwt.sign({ id: user._id }, secretKey);
     const {_id,name,created_at} = user;
+
+    req.session.isAuthenticated = true;
+    // req.session.token = token;
+    
+    req.session.user = _id; 
     // Respond with a success message and the access token
     res.json({
       status: true,
@@ -114,7 +114,7 @@ router.post('/signin', async (req, res) => {
         
         },
         meta: {
-          access_token: token,
+          access_token: _id,
         },
       },
     });
@@ -124,16 +124,13 @@ router.post('/signin', async (req, res) => {
   }
 });
 
-router.get('/me', verifyToken, async (req, res) => {
+router.get('/me', async (req, res) => {
   try {
-    // Get the currently signed-in user's details from MongoDB
-    const user = await usersCollection.findOne({ _id: req.user.id });
-
+    const user = await usersCollection.findOne({ _id: req.session.user });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Remove sensitive data (e.g., password) before sending the response
     const { _id, name, email, created_at } = user;
 
     res.json({

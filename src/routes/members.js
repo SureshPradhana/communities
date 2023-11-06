@@ -2,13 +2,13 @@
 const express = require('express');
 const router = express.Router();
 const { membersCollection, rolesCollection, usersCollection,communitiesCollection, Snowflake } = require('../database/mongo');
-const { verifyToken } = require('../middleware/auth');
+// const { verifyToken } = require('../middleware/auth');
 
 // Route to create a new member
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { community, user, role } = req.body;
-    const userId = req.user.id;
+    const userId = req.session.user;
 
     // Check if the community, user, and role exist in the database
     const communityDocument = await communitiesCollection.findOne({ _id: community });
@@ -58,10 +58,10 @@ router.post('/', verifyToken, async (req, res) => {
 });
 
 // Route to remove a member by ID
-router.delete('/:id', verifyToken,async (req, res) => {
+router.delete('/:id',async (req, res) => {
   try {
     const memberId = req.params.id;
-    const userId = req.user.id;
+    const userId = req.session.user;
 
 
     // Check if the member exists in the "members" collection in the database
