@@ -40,7 +40,7 @@ app.use(express.static('public'));
 //auth middlewares
 app.use('/v1/community', cookieAuthMiddleware);
 app.use('/v1/members', cookieAuthMiddleware);
-app.use('/v1/auth/me', cookieAuthMiddleware);
+app.use('/v1/auth', cookieAuthMiddleware);
 
 // Routes
 app.get('/', async (req, res) => {

@@ -132,7 +132,7 @@ router.get('/me', async (req, res) => {
     }
 
     const { _id, name, email, created_at } = user;
-
+    // console.log(user)
     res.json({
       status: true,
       content: {

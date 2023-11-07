@@ -1,14 +1,22 @@
-const request = require('supertest');
-const app = require('../../server'); 
+
+var session = require('supertest-session');
+
+const app = require('../../server');
 const expect = require('chai').expect;
-const { connectToMongo, rolesCollection,usersCollection,communitiesCollection } = require('../../src/database/mongo');
+const { connectToMongo, rolesCollection, usersCollection, communitiesCollection } = require('../../src/database/mongo');
+
+var testSession = null;
 
 // let token="";
 let communityid="";
 let roleid="";
 let userid="";
+// let token;
 
-//roles integration tests
+before(function() {
+  testSession = session(app);
+});
+
 describe('a suite role integration tests', function () {
 
   this.timeout(10000);
@@ -20,7 +28,7 @@ describe('a suite role integration tests', function () {
 
   it('1 should create a new role',function(done) {
       const roleData = { name: 'Test Role 8' };
-      request(app)
+      testSession
         .post('/v1/role')
         .send(roleData)
         .expect(200)
@@ -34,7 +42,7 @@ describe('a suite role integration tests', function () {
     });
 
   it('2 should get roles', function (done) {
-    request(app)
+    testSession
         .get('/v1/role')
         .expect(200)
         .end(function(err, res) {
@@ -43,34 +51,34 @@ describe('a suite role integration tests', function () {
           done();
         });
   });
-  
-// });
 
-//auth integration tests
-// describe('a suite auth integration tests', function () {
-  
-//   this.timeout(10000);
+});
 
-//   before(async function() {
-//     await connectToMongo();
-//   });
-  
-  it('1 should create a new user using signup',function(done) {
-      const userData = { name: 'test user' ,email:"test@gmail.com",password : '12354545998788349923'};
-      request(app)
-        .post('/v1/auth/signup')
-        .send(userData)
-        .expect(200)
-        .end(function(err, res) {
-          if (err) throw err;
-          expect(res.body.status).to.be.true;
-          done();
-        });
-    });
-  
-  it('2 should throw error on existing user',function(done) {
-    const userData = { name: 'test user' ,email:"test@gmail.com",password : '12354545998788349923'};
-    request(app)
+// auth integration tests
+describe('a suite auth integration tests', function() {
+
+  this.timeout(10000);
+
+  before(async function() {
+    await connectToMongo();
+  });
+
+  it('1 should create a new user using signup', function(done) {
+    const userData = { name: 'test user', email: "test@gmail.com", password: '12354545998788349923' };
+    testSession
+      .post('/v1/auth/signup')
+      .send(userData)
+      .expect(200)
+      .end(function(err, res) {
+        if (err) throw err;
+        expect(res.body.status).to.be.true;
+        done();
+      });
+  });
+
+  it('2 should throw error on existing user', function(done) {
+    const userData = { name: 'test user', email: "test@gmail.com", password: '12354545998788349923' };
+    testSession
       .post('/v1/auth/signup')
       .send(userData)
       .expect(400)
@@ -79,47 +87,59 @@ describe('a suite role integration tests', function () {
         done();
       });
   });
-  
+})
 
-  it('3 should signin', function (done) {
-    const userData = { email:"test@gmail.com",password : '12354545998788349923'};
-      request(app)
-        .post('/v1/auth/signin')
-        .send(userData)
-        .expect(200)
-        .end(function(err, res) {
-          if (err) throw err;
-           expect(res.body.status).to.be.true;
-          // token = res.body.content.meta.access_token;
-          done();
-        });
+//signin
+describe('a suite auth signin integration tests', function() {
+  this.timeout(20000);
+  var authenticatedSession;
+  before(async function() {
+    await connectToMongo();
   });
-  
-  it('4 should verify signin', function (done) {
-      request(app)
-        .get('/v1/auth/me')
-        .expect(200)
-        .end(function(err, res) {
-          if (err) throw err;
-           expect(res.body.status).to.be.true;
-          done();
-        });
+  beforeEach(function(done) {
+    const userData = { email: 'test@example.com', password: '12354545998788349923' };
+    testSession
+      .post('/v1/auth/signin')
+      .send(userData)
+      .end(function(err) {
+        if (err) return done(err);
+        authenticatedSession = testSession;
+        done();
+      });
   });
-  
-// });
+  // after(async function() {
+  //   await usersCollection.deleteOne({ name: 'Test User 2' })
+  //   await communitiesCollection.deleteOne({ name: "test community" })
+  //   await usersCollection.deleteOne({ email: "test@gmail.com" })
 
-// //community integration tests
-// describe('a suite community integration tests', function () {
+  // });
 
-//   this.timeout(10000);
+  it('3 should signin', function(done) {
+    const userData = { email: "test@gmail.com", password: '12354545998788349923' };
+    authenticatedSession
+      .post('/v1/auth/signin')
+      .send(userData)
+      .expect(200)
+      .end(function(err, res) {
+        if (err) throw err;
+        expect(res.body.status).to.be.true;
+        done();
+      });
+  });
 
-//   before(async function() {
-//     await connectToMongo();
-//   });
-
+  it('4 should verify signin', function(done) {
+    authenticatedSession
+      .get('/v1/auth/me')
+      .expect(200)
+      .end(function(err, res) {
+        if (err) throw err;
+        expect(res.body.status).to.be.true;
+        done();
+      });
+  });
   it('1 should create a new community ',function(done) {
       const userData = { name: 'test community' };
-      request(app)
+      authenticatedSession
         .post('/v1/community')
         .send(userData)
         .expect(200)
@@ -132,7 +152,7 @@ describe('a suite role integration tests', function () {
     });
 
   it('2 should get all community lists',function(done) {
-    request(app)
+    authenticatedSession
       .get('/v1/community')
       .expect(200)
       .end(function(err, res) {
@@ -142,8 +162,8 @@ describe('a suite role integration tests', function () {
       });
   });
 
-  it('3 should get all community mebers',function(done) {
-    request(app)
+  it('3 should get all community members',function(done) {
+    authenticatedSession
       .get('/v1/community/'+communityid+ '/members')
       .expect(200)
       .end(function(err, res) {
@@ -154,7 +174,7 @@ describe('a suite role integration tests', function () {
   });
 
   it('4 should get all communities where i am owner', function (done) {
-      request(app)
+      authenticatedSession
         .get('/v1/community/me/owner')
         .expect(200)
         .end(function(err, res) {
@@ -164,7 +184,7 @@ describe('a suite role integration tests', function () {
         });
   });
   it('5 should get all communities where i am member', function (done) {
-      request(app)
+      authenticatedSession
         .get('/v1/community/me/member')
         .expect(200)
         .end(function(err, res) {
@@ -174,17 +194,16 @@ describe('a suite role integration tests', function () {
         });
   });
 
-// });
+})
+//members integration tests
+describe('a suite members integration tests', function () {
 
-// //members integration tests
-// describe('a suite members integration tests', function () {
-
-//   this.timeout(10000);
+  this.timeout(10000);
 
   before(async function() {
     await connectToMongo();
     const userData = { name: 'Test User 2', email: 'test2@example.com', password: '12132424242424242424' };
-    const response = await request(app)
+    const response = await testSession
       .post('/v1/auth/signup')
       .send(userData);
 
@@ -197,12 +216,13 @@ describe('a suite role integration tests', function () {
     await usersCollection.deleteOne({name:'Test User 2'})
     await communitiesCollection.deleteOne({name:"test community"})
     await usersCollection.deleteOne({email:"test@gmail.com"})
+
   });
 
 
   it('1 should create a new member ',function(done) {
       const userData = {community:communityid,user:userid,role:roleid };
-      request(app)
+      testSession
         .post('/v1/member')
         .send(userData)
         .expect(200)
@@ -214,7 +234,7 @@ describe('a suite role integration tests', function () {
   });
 
   it('2 should delete a member',function(done) {
-    request(app)
+    testSession
       .delete('/v1/member/'+userid)
       .expect(200)
       .end(function(err, res) {

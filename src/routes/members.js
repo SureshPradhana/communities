@@ -18,7 +18,7 @@ router.post('/', async (req, res) => {
     if (!communityDocument || !userDocument || !roleDocument) {
       return res.status(400).json({ message: 'Invalid community, user, or role' });
     }
-    console.log(communityDocument)
+    // console.log(communityDocument)
     
     if (!communityDocument.owner==userId) {
       return res.status(403).json({ message: 'Not allowed to add members' });

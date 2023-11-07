@@ -23,8 +23,14 @@ const routeConfig = [
     methods: ['GET'],
     message: 'Unauthorized for GET request to /v1/community/me/owner',
   },
+  {
+    route: '/v1/community/me/member',
+    methods: ['GET'],
+    message: 'Unauthorized for GET request to /v1/community/me/owner',
+  },
   // Add more route/method configurations as needed
 ];
+
 function cookieAuthMiddleware(req, res, next) {
   const matchingConfig = routeConfig.find((config) => {
     const pathMatch = req.path.startsWith(config.route);
